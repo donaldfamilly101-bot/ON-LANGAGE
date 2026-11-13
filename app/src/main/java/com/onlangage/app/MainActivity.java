@@ -116,28 +116,30 @@ public class MainActivity extends Activity {
     private void writePdf(WebView printer, boolean share) {
         PdfDocument document = new PdfDocument();
         try {
+            // A4 landscape: fit the entire certificate on ONE page.
+            // The HTML certificate uses 297mm x 210mm (~1122 x 794 CSS px).
             final int pageWidth = 842;
             final int pageHeight = 595;
-            final int renderWidth = 794;
-            printer.measure(View.MeasureSpec.makeMeasureSpec(renderWidth, View.MeasureSpec.EXACTLY),
-                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-            int contentHeight = Math.max(794, printer.getMeasuredHeight());
-            printer.layout(0, 0, renderWidth, contentHeight);
-            float scale = (float) pageWidth / renderWidth;
-            float sourcePageHeight = pageHeight / scale;
-            int pages = Math.max(1, (int) Math.ceil(contentHeight / sourcePageHeight));
-            for (int index = 0; index < pages; index++) {
-                PdfDocument.Page page = document.startPage(
-                        new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, index + 1).create());
-                Canvas canvas = page.getCanvas();
-                canvas.drawColor(Color.WHITE);
-                canvas.save();
-                canvas.scale(scale, scale);
-                canvas.translate(0, -index * sourcePageHeight);
-                printer.draw(canvas);
-                canvas.restore();
-                document.finishPage(page);
-            }
+            final int renderWidth = 1122;
+            final int renderHeight = 794;
+            printer.measure(
+                    View.MeasureSpec.makeMeasureSpec(renderWidth, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(renderHeight, View.MeasureSpec.EXACTLY));
+            printer.layout(0, 0, renderWidth, renderHeight);
+            PdfDocument.Page page = document.startPage(
+                    new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create());
+            Canvas canvas = page.getCanvas();
+            canvas.drawColor(Color.WHITE);
+            canvas.save();
+            float scale = Math.min((float) pageWidth / renderWidth,
+                    (float) pageHeight / renderHeight);
+            float offsetX = (pageWidth - renderWidth * scale) / 2f;
+            float offsetY = (pageHeight - renderHeight * scale) / 2f;
+            canvas.translate(offsetX, offsetY);
+            canvas.scale(scale, scale);
+            printer.draw(canvas);
+            canvas.restore();
+            document.finishPage(page);
             File folder = new File(getCacheDir(), "certificates");
             if (!folder.exists() && !folder.mkdirs()) throw new IOException("Dosye PDF pa disponib");
             File pdf = new File(folder, "ON-LANGAGE-Certificat-" + System.currentTimeMillis() + ".pdf");
