@@ -1,5 +1,5 @@
 package com.onlangage.app;
-
+https://github.com/donaldfamilly101-bot/ON-LANGAGE/delete/main/app/src/main/java/com/onlangage/app/MainActivity%282%29.java
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.CancellationSignal;
