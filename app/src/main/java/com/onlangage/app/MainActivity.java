@@ -13,12 +13,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.pdf.PdfDocument;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.speech.tts.TextToSpeech;
 import java.util.Locale;
 import java.io.*;
 
 public class MainActivity extends Activity {
     private WebView web;
+    private FrameLayout root;
     private static final int SAVE_PDF = 301;
     private File pendingPdf;
     private TextToSpeech tts;
@@ -26,8 +28,10 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        root = new FrameLayout(this);
         web = new WebView(this);
-        setContentView(web);
+        root.addView(web, new FrameLayout.LayoutParams(-1, -1));
+        setContentView(root);
         tts = new TextToSpeech(this, status -> {
             voiceReady = status == TextToSpeech.SUCCESS;
             if (!voiceReady) message("Motè vwa Android pa disponib");
@@ -91,6 +95,10 @@ public class MainActivity extends Activity {
             return;
         }
         WebView printer = new WebView(this);
+        // An unattached WebView may never finish loading on Android.
+        FrameLayout.LayoutParams pdfParams = new FrameLayout.LayoutParams(1122, 794);
+        printer.setAlpha(0.01f);
+        root.addView(printer, pdfParams);
         printer.setBackgroundColor(Color.WHITE);
         printer.getSettings().setDefaultTextEncodingName("UTF-8");
         printer.getSettings().setJavaScriptEnabled(false);
@@ -113,7 +121,7 @@ public class MainActivity extends Activity {
             final int renderWidth = 794;
             printer.measure(View.MeasureSpec.makeMeasureSpec(renderWidth, View.MeasureSpec.EXACTLY),
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
-            int contentHeight = Math.max(1, printer.getMeasuredHeight());
+            int contentHeight = Math.max(794, printer.getMeasuredHeight());
             printer.layout(0, 0, renderWidth, contentHeight);
             float scale = (float) pageWidth / renderWidth;
             float sourcePageHeight = pageHeight / scale;
@@ -143,6 +151,7 @@ public class MainActivity extends Activity {
             message("Erè PDF: " + e.getMessage());
         } finally {
             document.close();
+            root.removeView(printer);
             printer.destroy();
         }
     }
