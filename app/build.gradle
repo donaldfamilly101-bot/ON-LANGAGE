@@ -1,0 +1,32 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.onlangage.app'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.onlangage.app'
+        minSdk 23
+        targetSdk 35
+        versionCode 26
+        versionName '26.0'
+    }
+    signingConfigs {
+        release {
+            if (project.hasProperty('ON_KEYSTORE_FILE')) {
+                storeFile file(project.property('ON_KEYSTORE_FILE'))
+                storePassword project.property('ON_KEYSTORE_PASSWORD')
+                keyAlias project.property('ON_KEY_ALIAS')
+                keyPassword project.property('ON_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (project.hasProperty('ON_KEYSTORE_FILE')) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
