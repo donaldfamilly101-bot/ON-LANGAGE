@@ -1,0 +1,50 @@
+name: ON-LANGAGE Android Build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Check application files
+        run: |
+          test -s app/src/main/assets/index.html
+          test -s app/src/main/AndroidManifest.xml
+          test -s app/src/main/java/com/onlangage/app/MainActivity.java
+      - name: Build debug APK and release AAB
+        env:
+          KEYSTORE_B64: ${{ secrets.ON_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ON_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ON_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ON_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$KEYSTORE_B64" && -n "$KEYSTORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]]; then
+            printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/on-langage-release.jks"
+            gradle :app:assembleDebug :app:bundleRelease --stacktrace \
+              -PON_KEYSTORE_FILE="$RUNNER_TEMP/on-langage-release.jks" \
+              -PON_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" \
+              -PON_KEY_ALIAS="$KEY_ALIAS" \
+              -PON_KEY_PASSWORD="$KEY_PASSWORD"
+          else
+            echo 'No release signing secrets: generating test APK and unsigned AAB.'
+            gradle :app:assembleDebug :app:bundleRelease --stacktrace
+          fi
+      - name: Save Android outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ON-LANGAGE-APK-AAB
+          if-no-files-found: error
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/bundle/release/*.aab

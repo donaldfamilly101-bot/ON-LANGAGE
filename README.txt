@@ -1,0 +1,1 @@
+ON-LANGAGE V25: Android GitHub project. HTML V24 retained. Added reviewed Haitian Creole to Spanish example. Translation uses public MyMemory API online and may be rate-limited. No private backend or Play Store signing is configured. GitHub workflow generates debug APK and unsigned release AAB.
