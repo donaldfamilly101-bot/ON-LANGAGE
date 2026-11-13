@@ -13,17 +13,25 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.pdf.PdfDocument;
 import android.view.View;
+import android.speech.tts.TextToSpeech;
+import java.util.Locale;
 import java.io.*;
 
 public class MainActivity extends Activity {
     private WebView web;
     private static final int SAVE_PDF = 301;
     private File pendingPdf;
+    private TextToSpeech tts;
+    private boolean voiceReady = false;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         web = new WebView(this);
         setContentView(web);
+        tts = new TextToSpeech(this, status -> {
+            voiceReady = status == TextToSpeech.SUCCESS;
+            if (!voiceReady) message("Motè vwa Android pa disponib");
+        });
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -32,6 +40,9 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Object() {
             @JavascriptInterface public void saveCertificate(String html) {
                 runOnUiThread(() -> generatePdf(html, false));
+            }
+            @JavascriptInterface public void speak(String text, String language) {
+                runOnUiThread(() -> speakText(text, language));
             }
             @JavascriptInterface public void shareCertificate(String html) {
                 runOnUiThread(() -> generatePdf(html, true));
@@ -48,6 +59,26 @@ public class MainActivity extends Activity {
             }
         });
         web.loadUrl("file:///android_asset/index.html");
+    }
+
+    private void speakText(String text, String language) {
+        if (!voiceReady || tts == null) {
+            message("Aktive motè Text-to-Speech sou telefòn nan");
+            return;
+        }
+        Locale locale = Locale.forLanguageTag(language == null ? "en-US" : language);
+        int available = tts.setLanguage(locale);
+        if (available == TextToSpeech.LANG_MISSING_DATA || available == TextToSpeech.LANG_NOT_SUPPORTED) {
+            message("Vwa pou lang sa a pa enstale sou telefòn nan");
+            return;
+        }
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "onlangage-voice");
+    }
+
+    @Override protected void onDestroy() {
+        if (tts != null) { tts.stop(); tts.shutdown(); }
+        if (web != null) web.destroy();
+        super.onDestroy();
     }
 
     private void message(String text) {
@@ -77,8 +108,8 @@ public class MainActivity extends Activity {
     private void writePdf(WebView printer, boolean share) {
         PdfDocument document = new PdfDocument();
         try {
-            final int pageWidth = 595;
-            final int pageHeight = 842;
+            final int pageWidth = 842;
+            final int pageHeight = 595;
             final int renderWidth = 794;
             printer.measure(View.MeasureSpec.makeMeasureSpec(renderWidth, View.MeasureSpec.EXACTLY),
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
