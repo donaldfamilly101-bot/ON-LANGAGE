@@ -190,19 +190,20 @@ function renderCertList(){const e=$('certList');e.replaceChildren();if(!store.ce
  const style=Array.from(document.querySelectorAll('style')).map(x=>x.textContent).join('\n');
  const printFix=`<style>
  @page{size:A4 landscape;margin:0}
- html,body{margin:0!important;padding:0!important;width:794px!important;height:562px!important;overflow:hidden!important;background:white!important}
- body>.cert{position:relative!important;display:flex!important;width:746px!important;height:514px!important;min-height:0!important;max-height:514px!important;margin:24px!important;padding:18px!important;box-sizing:border-box!important;overflow:hidden!important;aspect-ratio:auto!important;break-inside:avoid!important}
- body>.cert .cert-inner{display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;width:100%!important;height:100%!important;min-height:0!important;padding:14px!important;box-sizing:border-box!important;overflow:hidden!important;gap:5px!important}
- body>.cert h1{font-size:24px!important;line-height:1.1!important;margin:3px 0!important}
- body>.cert h2{font-size:17px!important;line-height:1.15!important;margin:3px 0!important}
- body>.cert p{font-size:13px!important;line-height:1.25!important;margin:2px 0!important}
- body>.cert .name{font-size:27px!important;line-height:1.15!important;margin:4px 0!important}
- body>.cert .seal{font-size:20px!important;line-height:1.1!important}
- body>.cert .cert-meta{font-size:12px!important;line-height:1.2!important}
- body>.cert .cert-kicker,body>.cert small{font-size:10px!important}
- body>.cert .cert-sign{font-size:12px!important}
+ html,body{margin:0!important;padding:0!important;width:1122px!important;height:794px!important;overflow:hidden!important;background:#fff!important}
+ body>.cert{position:relative!important;display:flex!important;width:1058px!important;height:730px!important;min-height:0!important;max-height:730px!important;margin:32px!important;padding:26px!important;box-sizing:border-box!important;overflow:hidden!important;aspect-ratio:auto!important;break-inside:avoid!important}
+ body>.cert .cert-inner{display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;width:100%!important;height:100%!important;min-height:0!important;padding:22px!important;box-sizing:border-box!important;overflow:hidden!important;gap:8px!important}
+ body>.cert h1{font-size:34px!important;line-height:1.12!important;margin:5px 0!important}
+ body>.cert h2{font-size:24px!important;line-height:1.15!important;margin:4px 0!important}
+ body>.cert p{font-size:18px!important;line-height:1.3!important;margin:3px 0!important}
+ body>.cert .name{font-size:38px!important;line-height:1.15!important;margin:6px 0!important;max-width:100%;overflow-wrap:anywhere}
+ body>.cert .seal{font-size:28px!important;line-height:1.1!important}
+ body>.cert .cert-meta{font-size:17px!important;line-height:1.2!important}
+ body>.cert .cert-kicker,body>.cert small{font-size:14px!important}
+ body>.cert .cert-sign{font-size:17px!important}
+ body>.cert *{max-width:100%;box-sizing:border-box}
  </style>`;
- return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=794,initial-scale=1"><style>'+style+'</style>'+printFix+'</head><body><div class="cert '+cert.className.replace('cert','').trim()+'" style="'+colors+'">'+cert.innerHTML+'</div></body></html>';
+ return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1122,initial-scale=1"><style>'+style+'</style>'+printFix+'</head><body><div class="cert '+cert.className.replace('cert','').trim()+'" style="'+colors+'">'+cert.innerHTML+'</div></body></html>';
 }
 $('print').onclick=()=>{
  if(window.ONLangageAndroid&&typeof window.ONLangageAndroid.saveCertificate==='function'){
