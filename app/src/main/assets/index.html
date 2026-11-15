@@ -139,7 +139,7 @@ function quizPassed(i,q,k=key()){return !!(store.miniPassed?.[k]?.[i]||[]).inclu
  return Object.entries(categories).flatMap(([kind,cats])=>cats.map(cat=>prefix+[kind,cat,state.from,state.to].join('|')));
 }
 function levelComplete(level){
- return !!store.levelExamPassed?.[level+'|'+state.from+'|'+state.to] || levelKeys(level).some(k=>[0,1].every(i=>quizPassed(i,1,k)));
+ return !!store.levelExamPassed?.[level+'|'+state.from+'|'+state.to] || (level==='basico' && levelKeys(level).some(k=>[0,1].every(i=>quizPassed(i,1,k))));
 }
 function levelUnlocked(level){
  // Successful levels remain available after closing and reopening the app.
@@ -308,7 +308,7 @@ function renderCertList(){
  const e=$('certList');e.replaceChildren();
  const awards=store.certs.filter(c=>c.awardLevel&&c.from===state.from&&c.to===state.to);
  if(!awards.length){e.textContent='No level certificates yet. Complete the required exams to unlock them.';return}
- awards.forEach(c=>{const b=element('button',(c.final?'🏆 Final Diploma':'🎓 '+c.level+' Certificate')+' — '+c.dossier,'answer');b.onclick=()=>displayCert(c);e.append(b)});
+ awards.forEach(c=>{const b=element('button',(c.final?'🏆 Final Diploma':'🎓 '+c.level+' Certificate')+' — '+c.dossier,'answer');b.onclick=()=>{if(c.final?!diplomaReady():!levelComplete(c.awardLevel)){alert('Complete this level first.');return;}displayCert(c)};e.append(b)});
 }
 $('certificateLanguage').onchange=()=>{store.certificateLanguage=$('certificateLanguage').value;save();if(activeCertificate)displayCert(activeCertificate)};
 $('certificateLanguageAward').onchange=()=>{store.certificateLanguage=$('certificateLanguageAward').value;$('certificateLanguage').value=store.certificateLanguage;save()};
@@ -327,25 +327,29 @@ $('makeCert').onclick=()=>{
 };function certificatePrintHtml(){
  const cert=$('certPrint');
  const colors=['--cert-primary','--cert-accent'].map(k=>k+':'+cert.style.getPropertyValue(k)).join(';');
- // Standalone layout: no conflicting A4 / print / mobile CSS from the app.
- const css=`*{box-sizing:border-box}html,body{margin:0;padding:0;width:1122px;height:794px;overflow:hidden;background:white;font-family:Arial,sans-serif;color:#172a50}
- .cert{position:absolute;left:32px;top:32px;width:1058px;height:730px;display:flex;align-items:stretch;justify-content:center;overflow:hidden;background:#fff;color:var(--cert-primary);border:9px double var(--cert-accent);padding:25px;text-align:center}
- .cert-inner{width:100%;height:100%;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:9px;padding:26px;border:2px solid var(--cert-primary);overflow:hidden;text-align:center}
- .cert h1{color:var(--cert-primary);font-size:34px;line-height:1.12;margin:5px 0}
- .cert h2{color:var(--cert-primary);font-size:24px;line-height:1.15;margin:4px 0}
- .cert p{font-size:17px;line-height:1.35;margin:4px 0;max-width:850px}
- .cert .name{color:var(--cert-primary);font-size:38px;font-weight:900;line-height:1.15;margin:6px 0;border-bottom:2px solid var(--cert-accent);padding:0 12px 4px;overflow-wrap:anywhere;max-width:100%}
- .cert .seal{font-size:28px;font-weight:900;line-height:1.1;color:var(--cert-primary)}
+ // Match Android PDF renderer: 1122 x 794 CSS pixels, A4 landscape.
+ // The entire certificate is contained on exactly one PDF page.
+ const css=`*{box-sizing:border-box}html,body{margin:0!important;padding:0!important;width:1122px!important;height:794px!important;overflow:hidden!important;background:white;font-family:Arial,sans-serif;color:#172a50}
+ .pdf-page{width:1122px;height:794px;margin:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
+ .cert{position:relative;flex:none;width:1060px;height:730px;display:flex;align-items:stretch;justify-content:center;overflow:hidden;background:#fff;color:var(--cert-primary);border:9px double var(--cert-accent);padding:19px;text-align:center}
+ .cert-inner{width:100%;height:100%;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;padding:16px;border:2px solid var(--cert-primary);overflow:hidden;text-align:center}
+ .cert h1{color:var(--cert-primary);font-size:31px;line-height:1.15;margin:7px 0}
+ .cert h2{color:var(--cert-primary);font-size:24px;line-height:1.18;margin:5px 0}
+ .cert p{font-size:18px;line-height:1.3;margin:5px 0;max-width:100%}
+ .cert .name{color:var(--cert-primary);font-size:35px;font-weight:900;line-height:1.15;margin:8px 0;border-bottom:2px solid var(--cert-accent);padding:0 10px 5px;overflow-wrap:anywhere;max-width:100%}
+ .cert .seal{font-size:24px;font-weight:900;line-height:1.1;color:var(--cert-primary)}
  .cert .cert-meta{font-size:17px;font-weight:750;line-height:1.2}
- .cert small,.cert .cert-kicker{font-size:14px}.cert .cert-sign{font-size:17px;margin-top:4px}
- .cert.design-modern{border-style:solid;border-width:12px 4px}
- .cert.design-luxury{border-width:12px;background:linear-gradient(135deg,#fff 75%,#f7f3e8)}
- .cert.design-classic{border-style:double;border-width:14px}
+ .cert small,.cert .cert-kicker{font-size:14px}.cert .cert-sign{font-size:16px;margin-top:7px}
+ .cert.design-modern{border-style:solid;border-width:9px 5px}
+ .cert.design-luxury{border-width:9px;background:linear-gradient(135deg,#fff 75%,#f7f3e8)}
+ .cert.design-classic{border-style:double;border-width:12px}
  .cert.design-royal .cert-inner{border:3px double var(--cert-primary)}
- .cert.design-ornate:before,.cert.design-ornate:after{content:'✦';position:absolute;font-size:25px;color:var(--cert-accent);top:15px}
- .cert.design-ornate:before{left:20px}.cert.design-ornate:after{right:20px}
- .cert *{max-width:100%}`;
- return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1122,initial-scale=1,maximum-scale=1,user-scalable=no"><style>'+css+'</style></head><body><div class="'+cert.className+'" style="'+colors+'">'+cert.innerHTML+'</div></body></html>';
+ .cert.design-ornate:before,.cert.design-ornate:after{content:'✦';position:absolute;font-size:22px;color:var(--cert-accent);top:15px}
+ .cert.design-ornate:before{left:19px}.cert.design-ornate:after{right:19px}
+ .cert *{max-width:100%}
+ @page{size:A4 landscape;margin:0}
+ @media print{html,body,.pdf-page{width:1122px!important;height:794px!important;overflow:hidden!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
+ return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=1122,initial-scale=1"><style>'+css+'</style></head><body><div class="pdf-page"><div class="'+cert.className+'" style="'+colors+'">'+cert.innerHTML+'</div></div></body></html>';
 }
 $('print').onclick=()=>{
  if(window.ONLangageAndroid&&typeof window.ONLangageAndroid.saveCertificate==='function'){
@@ -370,6 +374,17 @@ $('return').onclick=()=>{
  if(state.cat&&courseData()[state.kind]&&courseData()[state.kind][state.cat]){renderStudy();show('study');}
  else{renderLevels();renderCats();show('home');}
 };
+// Allow a learner to correct incorrectly imported advanced completion without losing Básico.
+function resetAdvancedProgress(){
+ if(!confirm('Keep Básico completed and reset Medio, Cuarto and Final Diploma progress for the current language pair?'))return;
+ const suffix='|'+state.from+'|'+state.to;
+ for(const level of ['medio','cuatro']){
+  if(store.levelExamPassed)delete store.levelExamPassed[level+suffix];
+  if(store.miniPassed)for(const k of Object.keys(store.miniPassed))if(k.startsWith(level+'|')&&k.endsWith(suffix))delete store.miniPassed[k];
+ }
+ // Keep issued documents in storage, but do not grant access until the level is earned again.
+ state.level='basico';state.cat='';state.lesson=0;save();renderLevels();renderCats();show('home');
+}
 const LEVELS=[['basico','1. Básico','10 questions • pass 8/10'],['medio','2. Medio','15 questions • pass 13/15'],['cuatro','3. Cuarto','20 questions • pass 17/20']];
 function renderLevels(){
  const root=$('courseLevels');root.replaceChildren();
@@ -392,6 +407,7 @@ function renderLevels(){
   const diploma=element('button','🏆 Final Diploma'+(diplomaReady()?' ✓':' 🔒'),'btn');
   diploma.disabled=!diplomaReady();diploma.onclick=openDiploma;awards.append(diploma);
  }
+ if(!$('resetAdvancedProgress')){const reset=element('button','Reset incorrectly unlocked advanced levels','btn secondary');reset.id='resetAdvancedProgress';reset.style.cssText='display:block;margin:12px auto;font-size:13px;padding:9px';reset.onclick=resetAdvancedProgress;root.parentNode.append(reset);}
  $('courseDescription').textContent=state.level==='basico'?'Basic lessons and exams':state.level==='medio'?'Intermediate: longer bilingual study sentences, 2 lessons and one exam per level.':'Advanced: complex bilingual study sentences, 2 lessons and one exam per level.';
 }
 function refreshStudent(){
