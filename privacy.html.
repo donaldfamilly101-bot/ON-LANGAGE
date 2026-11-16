@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy - ON-LANGAGE</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.7;
+  margin: 0;
+  padding: 24px;
+  color: #243247;
+  background: #f7f9fc;
+}
+main {
+  max-width: 800px;
+  margin: auto;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+}
+h1, h2 { color: #174a91; }
+</style>
+</head>
+<body>
+<main>
+<h1>ON-LANGAGE - Privacy Policy</h1>
+<p>Last updated: November 15, 2026</p>
+
+<h2>1. Introduction</h2>
+<p>ON-LANGAGE is a language-learning application offering lessons, vocabulary, examinations and educational certificates.</p>
+
+<h2>2. Information You Provide</h2>
+<p>The application may ask for your first name, last name and identification number (ID/RUT) to prepare educational certificates and diplomas.</p>
+
+<h2>3. Learning Progress</h2>
+<p>ON-LANGAGE may store your course progress, examination results and certificate preferences locally on your device.</p>
+
+<h2>4. Internet Access</h2>
+<p>Some features, including online translation, may require an internet connection. Text submitted for translation may be processed by an external translation service.</p>
+
+<h2>5. Advertising</h2>
+<p>ON-LANGAGE may display advertisements through Google AdMob. Advertising services may collect or process device identifiers and other information according to their own privacy policies.</p>
+<p>Google Privacy Policy:
+<a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a></p>
+
+<h2>6. Data Sharing</h2>
+<p>Information may be processed by third-party services necessary for translation and advertising. ON-LANGAGE does not sell personal information directly.</p>
+
+<h2>7. Data Retention and Deletion</h2>
+<p>Locally stored learning information may be removed by clearing the application's data or uninstalling the application. Information processed by external services is subject to their respective policies.</p>
+
+<h2>8. Children's Privacy</h2>
+<p>ON-LANGAGE is an educational application. Parents and guardians should supervise children's use of online translation and advertising features.</p>
+
+<h2>9. Security</h2>
+<p>We aim to protect user information, but no electronic storage or internet transmission method is completely secure.</p>
+
+<h2>10. Changes to This Policy</h2>
+<p>This policy may be updated when the application's features or data practices change.</p>
+
+<h2>11. Contact</h2>
+<p>For privacy questions, contact the ON-LANGAGE developer through the contact information published on the application's Google Play listing.</p>
+</main>
+</body>
+</html>
