@@ -1,13 +1,13 @@
 plugins { id 'com.android.application' }
 android {
     namespace 'com.onlangage.app'
-    compileSdk 35
+    compileSdk 36
     defaultConfig {
         applicationId 'com.onlangage.app'
         minSdk 24
-        targetSdk 35
-        versionCode 26
-        versionName '26.0'
+        targetSdk 36
+        versionCode 29
+        versionName '29.0'
     }
     signingConfigs {
         release {
