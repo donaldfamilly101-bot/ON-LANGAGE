@@ -4,7 +4,7 @@ android {
     compileSdk 35
     defaultConfig {
         applicationId 'com.onlangage.app'
-        minSdk 23
+        minSdk 24
         targetSdk 35
         versionCode 26
         versionName '26.0'
