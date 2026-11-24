@@ -20,13 +20,21 @@ public class MainActivity extends Activity {
  private FrameLayout root;
  private TextToSpeech tts;
  private boolean voiceReady=false;
+ private String pendingSpeech=null, pendingLanguage=null;
  private static final int SAVE_PDF = 301;
  private File pendingPdf;
  @Override public void onCreate(Bundle state) {
   super.onCreate(state);
   root=new FrameLayout(this);setContentView(root);
   web = new WebView(this); root.addView(web,new FrameLayout.LayoutParams(-1,-1));
-  tts=new TextToSpeech(this,status->{voiceReady=status==TextToSpeech.SUCCESS;});
+  tts=new TextToSpeech(this,status->{
+   voiceReady=status==TextToSpeech.SUCCESS;
+   if(voiceReady && pendingSpeech!=null){
+    String text=pendingSpeech, code=pendingLanguage;
+    pendingSpeech=null;pendingLanguage=null;
+    runOnUiThread(()->speakNative(text,code));
+   }
+  });
   WebSettings s = web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setAllowFileAccess(true);
   web.setWebChromeClient(new WebChromeClient());
   web.addJavascriptInterface(new Object() {
@@ -44,7 +52,8 @@ public class MainActivity extends Activity {
   web.loadUrl("file:///android_asset/index.html");
  }
  private void speakNative(String text,String code){
-  if(tts==null||!voiceReady){message("Audio poko pare. Verifye Text-to-Speech sou telefòn nan.");return;}
+  if(text==null||text.trim().isEmpty())return;
+  if(tts==null||!voiceReady){pendingSpeech=text;pendingLanguage=code;return;}
   Locale locale;
   switch(code==null?"":code){case "es":locale=new Locale("es","ES");break;case "pt":locale=new Locale("pt","BR");break;case "fr":locale=Locale.FRENCH;break;case "ht":locale=new Locale("fr","FR");break;default:locale=Locale.US;}
   int result=tts.setLanguage(locale);
@@ -62,7 +71,13 @@ public class MainActivity extends Activity {
    boolean started=false;
    @Override public void onPageFinished(WebView v,String url){
     if(started)return; started=true;
-    printer.postDelayed(()->writePdf(printer,share),500);
+    printer.postDelayed(()->{
+     printer.measure(View.MeasureSpec.makeMeasureSpec(1122,View.MeasureSpec.EXACTLY),
+                     View.MeasureSpec.makeMeasureSpec(794,View.MeasureSpec.EXACTLY));
+     printer.layout(0,0,1122,794);
+     printer.invalidate();
+     printer.postDelayed(()->writePdf(printer,share),350);
+    },650);
    }
   });
   // A print WebView needs a measured layout to avoid clipped or blank PDF pages.
