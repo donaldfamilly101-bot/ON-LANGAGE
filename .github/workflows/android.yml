@@ -20,7 +20,20 @@ jobs:
           test -s app/src/main/assets/index.html
           test -s app/src/main/AndroidManifest.xml
           test -s app/src/main/java/com/onlangage/app/MainActivity.java
-      - name: Build debug APK and release AAB
+          # Refuse to build if the Android asset is not the approved final HTML.
+          echo "b4f508a253779993a083ba9602aa5e311896b898d58b574a82bab462e037d559  app/src/main/assets/index.html" | sha256sum -c -
+          python3 - <<'PYVERIFY'
+          from pathlib import Path
+          s=Path('app/src/main/assets/index.html').read_text()
+          assert '8/10' in s and '13/15' in s and '17/20' in s
+          assert '5 lessons' not in s and '16/20' not in s
+          print('ON-LANGAGE FINAL HTML VERIFIED')
+          PYVERIFY
+      - name: Install Android SDK 36
+        uses: android-actions/setup-android@v3
+      - name: Install Android platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Require release signing credentials
         env:
           KEYSTORE_B64: ${{ secrets.ON_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ON_KEYSTORE_PASSWORD }}
@@ -29,17 +42,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -n "$KEYSTORE_B64" && -n "$KEYSTORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]]; then
-            printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/on-langage-release.jks"
-            gradle :app:assembleDebug :app:bundleRelease --stacktrace \
-              -PON_KEYSTORE_FILE="$RUNNER_TEMP/on-langage-release.jks" \
-              -PON_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" \
-              -PON_KEY_ALIAS="$KEY_ALIAS" \
-              -PON_KEY_PASSWORD="$KEY_PASSWORD"
-          else
-            echo 'No release signing secrets: generating test APK and unsigned AAB.'
-            gradle :app:assembleDebug :app:bundleRelease --stacktrace
+          if [[ -z "$KEYSTORE_B64" || -z "$KEYSTORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
+            echo 'ERROR: Four signing secrets are required; refusing unsigned Play Store bundle.' >&2
+            exit 1
           fi
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/on-langage-release.jks"
+          chmod 600 "$RUNNER_TEMP/on-langage-release.jks"
+          gradle :app:assembleDebug :app:bundleRelease --stacktrace \
+            -PON_KEYSTORE_FILE="$RUNNER_TEMP/on-langage-release.jks" \
+            -PON_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" \
+            -PON_KEY_ALIAS="$KEY_ALIAS" \
+            -PON_KEY_PASSWORD="$KEY_PASSWORD"
+          test -s app/build/outputs/bundle/release/app-release.aab
       - name: Save Android outputs
         uses: actions/upload-artifact@v4
         with:
