@@ -82,7 +82,7 @@ function openPanel(id){document.querySelectorAll('section').forEach(el=>el.class
 function level(n){if(n>0){document.getElementById('levelMsg').textContent=t(39);openPanel('lessons')}else{document.getElementById('levelMsg').textContent=t(38)+': Básico';openPanel('lessons')}}
 function translate(){document.getElementById('translation').textContent=t(45)}
 function swap(){const a=document.getElementById('from'),b=document.getElementById('to');[a.value,b.value]=[b.value,a.value]}
-function speak(){if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(document.getElementById('word').value);u.lang='en-US';speechSynthesis.speak(u)}}
+function speak(){if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(document.getElementById('word').value);u.lang='en-US';olSpeakWithNative(u)}}
 function save(){const p={last:document.getElementById('last').value,first:document.getElementById('first').value,idnum:document.getElementById('idnum').value};localStorage.setItem('on_langage_ui_profile',JSON.stringify(p));document.getElementById('saved').textContent=t(23)}
 for(let i=0;i<navIds.length;i++){const b=document.createElement('button');b.className='nav';b.dataset.target=navIds[i];b.onclick=()=>openPanel(navIds[i]);document.getElementById('navigation').appendChild(b)}
 for(const id of ['native','learn','from','to','certLang']){let el=document.getElementById(id);el.innerHTML=langs.map(([code,name])=>'<option value="'+code+'">'+name+'</option>').join('');el.value=['learn','to','certLang'].includes(id)?'es':'ht'}
@@ -108,7 +108,7 @@ const practice=[
 ];
 let currentLesson=0,lessonPage=0;
 function safeText(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function audioPhrase(index){const code=document.getElementById('learn').value; if(!('speechSynthesis'in window)){alert('Audio not supported on this browser');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(practice[index][code]);u.lang={ht:'fr-HT',es:'es-ES',fr:'fr-FR',en:'en-US',pt:'pt-BR'}[code]||'es-ES';u.rate=.83;speechSynthesis.speak(u)}
+function audioPhrase(index){const code=document.getElementById('learn').value; if(!('speechSynthesis'in window)){alert('Audio not supported on this browser');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(practice[index][code]);u.lang={ht:'fr-HT',es:'es-ES',fr:'fr-FR',en:'en-US',pt:'pt-BR'}[code]||'es-ES';u.rate=.83;olSpeakWithNative(u)}
 let lessonTwoLoaded=false;
 function showLesson(n){currentLesson=n;lessonPage=0;lessonTwoLoaded=(n===1);drawLesson();window.scrollTo({top:0,behavior:'instant'});}
 function lessonCards(start,end){
@@ -147,7 +147,7 @@ const oldOpenPanel=openPanel;openPanel=function(id){oldOpenPanel(id);if(id==='le
 const oldSetLang=setLang;setLang=function(l){oldSetLang(l);if(!document.getElementById('lessonReader').hidden)drawLesson();updateBackLabel()};
 document.getElementById('native').addEventListener('change',()=>{if(!document.getElementById('lessonReader').hidden)drawLesson()});
 document.getElementById('learn').addEventListener('change',()=>{if(!document.getElementById('lessonReader').hidden)drawLesson()});
-const originalSpeak=speak;speak=function(){const word=document.getElementById('word');if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(word.value);u.lang='en-US';speechSynthesis.speak(u)}};
+const originalSpeak=speak;speak=function(){const word=document.getElementById('word');if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(word.value);u.lang='en-US';olSpeakWithNative(u)}};
 updateBackLabel();
 </script>
 <style>
@@ -186,7 +186,7 @@ function speakStreamPhrase(i){
  speechSynthesis.cancel();
  const u=new SpeechSynthesisUtterance(ORIGINAL_LESSON_BANKS.basico[i][languageIndex[code]]);
  u.lang=locale;u.rate=.88;
- speechSynthesis.speak(u);
+ olSpeakWithNative(u);
 }
 function streamMore(){
  if(!streamActive||streamBusy||streamIndex>=1000)return;
@@ -261,7 +261,7 @@ function passedLevel(n){let p=getProgress();return !!p[n+'-0']&&!!p[n+'-1']}
 function unlocked(n){return n===0||passedLevel(n-1)}
 function getStudent(){try{return JSON.parse(localStorage.getItem('on_langage_v9_student'))}catch{return null}}
 function studentNumber(){let x=localStorage.getItem('on_langage_v9_number');if(!x){x='OL'+Math.floor(100000+Math.random()*900000);localStorage.setItem('on_langage_v9_number',x)}return x}
-function wordSpeak(i){let code=document.getElementById('learn').value;const u=new SpeechSynthesisUtterance(VOCAB_ORIGINAL[i][LIDX[code]]);u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];if('speechSynthesis'in window){speechSynthesis.cancel();speechSynthesis.speak(u)}}
+function wordSpeak(i){let code=document.getElementById('learn').value;const u=new SpeechSynthesisUtterance(VOCAB_ORIGINAL[i][LIDX[code]]);u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];if('speechSynthesis'in window){speechSynthesis.cancel();olSpeakWithNative(u)}}
 function vocabMore(){
 if(!vocabActive||vocabPos>=VOCAB_ORIGINAL.length)return;
 let el=document.getElementById('vocabList');if(!el)return;
@@ -382,7 +382,7 @@ speakStreamPhrase=function(i){
  const code=document.getElementById('learn').value,rows=ORIGINAL_LESSON_BANKS[v12Level];
  if(!('speechSynthesis'in window)||!rows[i])return;
  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(rows[i][languageIndex[code]]);
- u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];u.rate=.88;speechSynthesis.speak(u)
+ u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];u.rate=.88;olSpeakWithNative(u)
 };
 drawLesson=function(){
  const ui=lessonUi[lang],reader=document.getElementById('lessonReader');
@@ -421,7 +421,7 @@ vocabMore=function(){
 };
 wordSpeak=function(i){
  let code=document.getElementById('learn').value,word=v12VocabUnique[i];if(!word||!('speechSynthesis'in window))return;
- const u=new SpeechSynthesisUtterance(word[LIDX[code]]);u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];speechSynthesis.cancel();speechSynthesis.speak(u)
+ const u=new SpeechSynthesisUtterance(word[LIDX[code]]);u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];speechSynthesis.cancel();olSpeakWithNative(u)
 };
 showVocabulary=function(){
  vocabActive=true;vocabPos=0;
@@ -470,7 +470,7 @@ speakStreamPhrase=function(i){
  const code=document.getElementById('learn').value,r=v13Rows[v12Level][i];
  if(!r||!('speechSynthesis'in window))return;
  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(r[languageIndex[code]]);
- u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];u.rate=.88;speechSynthesis.speak(u)
+ u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];u.rate=.88;olSpeakWithNative(u)
 };
 streamMore=function(){
  if(!streamActive||streamBusy)return;
@@ -921,7 +921,7 @@ gradeExam=function(){
 const words=VOCAB_ORIGINAL.filter(r=>Array.isArray(r)&&r.length===5&&r.every(v=>typeof v==='string'&&v.trim()));
 const seen=new Set(),unique=words.filter(r=>{let k=r[2].toLowerCase().trim();if(seen.has(k))return false;seen.add(k);return true});
 vocabMore=function(){if(!vocabActive||vocabPos>=unique.length)return;const el=document.getElementById('vocabList');if(!el)return;const a=LIDX[document.getElementById('native').value],b=LIDX[document.getElementById('learn').value],end=Math.min(vocabPos+45,unique.length);let h='';for(let i=vocabPos;i<end;i++){const r=unique[i];h+=`<div class="word-row"><div><strong>${i+1}. ${safeText(r[b])}</strong><small>${safeText(r[a])}</small></div><button onclick="wordSpeak(${i})" aria-label="Audio">🔊</button></div>`;}el.insertAdjacentHTML('beforeend',h);vocabPos=end;const count=document.getElementById('vocabCount');if(count)count.textContent=`${vocabPos} / ${unique.length}`};
-wordSpeak=function(i){const r=unique[i];if(!r)return;const code=document.getElementById('learn').value,spoken=r[LIDX[code]];if(!spoken)return;if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(spoken);u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];speechSynthesis.speak(u)}};
+wordSpeak=function(i){const r=unique[i];if(!r)return;const code=document.getElementById('learn').value,spoken=r[LIDX[code]];if(!spoken)return;if('speechSynthesis' in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(spoken);u.lang={ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'}[code];olSpeakWithNative(u)}};
 showVocabulary=function(){vocabActive=true;vocabPos=0;document.getElementById('vocab').innerHTML=`<h2>${safeText(ui().vocab.replace(/\s*[—-]\s*5000.*$/,''))}</h2><p id="vocabCount">0 / ${unique.length}</p><div id="vocabList"></div><button class="btn" onclick="openPanel('home')">← ${safeText(ui().back)}</button>`;vocabMore();vocabMore()};
 downloadCert=function(n){if(n<3&&!passedLevel(n))return;if(n===3&&!passedLevel(2))return;const doc=olCertificateHTML(n);if(!doc){alert(ui().needprofile);return}if(window.ONLangageAndroid&&typeof window.ONLangageAndroid.saveCertificate==='function'){window.ONLangageAndroid.saveCertificate(doc);return}const w=window.open('','_blank');if(w){w.document.open();w.document.write(doc);w.document.close();w.focus();w.print()}else alert('Ouvri sètifika a nan navigatè pou enprime PDF.')};
 window.shareOnLangageCertificate=function(n){if(n<3&&!passedLevel(n))return;if(n===3&&!passedLevel(2))return;const doc=olCertificateHTML(n);if(!doc){alert(ui().needprofile);return}if(window.ONLangageAndroid&&typeof window.ONLangageAndroid.shareCertificate==='function')window.ONLangageAndroid.shareCertificate(doc);else downloadCert(n)};
@@ -967,12 +967,29 @@ window.shareOnLangageCertificate=function(n){if(n<3&&!passedLevel(n))return;if(n
  for(const id of ['native','learn'])document.getElementById(id)?.addEventListener('change',()=>{refreshLanguage();});
 
  window.onVocabSearch=function(q){query=q;choose()};window.onVocabMore=more;
- window.onVocabSpeak=function(i){const w=terms[i];if(!w)return;const text=word(w,lang()),code=lang();if(window.ONLangageAndroid?.speak){window.ONLangageAndroid.speak(text,code);return}if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(text);u.lang=({ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'})[code];speechSynthesis.cancel();speechSynthesis.speak(u)}};
+ window.onVocabSpeak=function(i){const w=terms[i];if(!w)return;const text=word(w,lang()),code=lang();if(window.ONLangageAndroid?.speak){window.ONLangageAndroid.speak(text,code);return}if(window.speechSynthesis){const u=new SpeechSynthesisUtterance(text);u.lang=({ht:'fr-FR',fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-BR'})[code];speechSynthesis.cancel();olSpeakWithNative(u)}};
  window.onVocabDefine=async function(i){const w=terms[i];if(!w)return;const box=document.getElementById('vocabDefinition');box.style.display='block';box.textContent='Chajman…';const code=lang(),base=w[2];let translated=word(w,code);try{if(!w[LIDX[code]]&&code!=='en'){const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(base)+'&langpair=en|'+langCode[code]);if(r.ok){const data=await r.json();if(data.responseData?.translatedText){translated=data.responseData.translatedText;translations.set(code+'|'+base,translated)}}}}catch(e){}
  let definition='Definisyon pa disponib san entènèt.';try{const r=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(base));if(r.ok){const data=await r.json();definition=data?.[0]?.meanings?.[0]?.definitions?.[0]?.definition||definition}}catch(e){}
  box.innerHTML=`<strong>${esc(translated)}</strong> (${esc(base)})<p>${esc(definition)}</p><button type="button" class="btn" onclick="this.parentNode.style.display='none'">Fèmen</button>`;};
  window.showVocabulary=function(){vocabActive=true;query='';document.getElementById('vocab').innerHTML=`<h2>${esc(ui().vocab)}</h2><input type="search" aria-label="Chèche vokabilè" placeholder="Search" oninput="onVocabSearch(this.value)" style="width:100%;padding:12px;border-radius:10px;margin:12px 0;color:#122650"><p id="vocabCount"></p><div id="vocabDefinition" style="display:none;padding:14px;border:1px solid #d8b76b;border-radius:12px;margin:12px 0"></div><div id="vocabList"></div><button id="vocabMoreBtn" class="btn" onclick="onVocabMore()">Plis vokabilè</button><button class="btn" onclick="openPanel('home')">← ${esc(ui().back)}</button>`;choose()};
  window.vocabMore=more;
 })();
+</script>
+
+<script>
+/* V31.3 PDF/audio repair: native speech bridge, no interface changes. */
+function olSpeakWithNative(u){
+  if(!u || !u.text)return;
+  try{
+    if(window.ONLangageAndroid && typeof window.ONLangageAndroid.speak==='function'){
+      const language=String(u.lang||'en').toLowerCase();
+      const code=language.startsWith('es')?'es':language.startsWith('pt')?'pt':language.startsWith('fr')?'fr':language.startsWith('ht')?'ht':'en';
+      window.ONLangageAndroid.speak(u.text,code);
+    }else if(window.speechSynthesis){
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
+  }catch(e){console.error('Audio:',e)}
+}
 </script>
 </body></html>
