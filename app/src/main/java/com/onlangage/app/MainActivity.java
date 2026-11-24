@@ -2,12 +2,11 @@ package com.onlangage.app;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.os.CancellationSignal;
-import android.os.ParcelFileDescriptor;
 import android.content.Intent;
 import android.net.Uri;
 import android.webkit.*;
-import android.print.*;
+import android.graphics.pdf.PdfDocument;
+import android.graphics.Canvas;
 import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import java.util.Locale;
@@ -21,13 +20,21 @@ public class MainActivity extends Activity {
  private FrameLayout root;
  private TextToSpeech tts;
  private boolean voiceReady=false;
+ private String pendingSpeech=null, pendingLanguage=null;
  private static final int SAVE_PDF = 301;
  private File pendingPdf;
  @Override public void onCreate(Bundle state) {
   super.onCreate(state);
   root=new FrameLayout(this);setContentView(root);
   web = new WebView(this); root.addView(web,new FrameLayout.LayoutParams(-1,-1));
-  tts=new TextToSpeech(this,status->{voiceReady=status==TextToSpeech.SUCCESS;});
+  tts=new TextToSpeech(this,status->{
+   voiceReady=status==TextToSpeech.SUCCESS;
+   if(voiceReady && pendingSpeech!=null){
+    String text=pendingSpeech, code=pendingLanguage;
+    pendingSpeech=null;pendingLanguage=null;
+    runOnUiThread(()->speakNative(text,code));
+   }
+  });
   WebSettings s = web.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setAllowFileAccess(true);
   web.setWebChromeClient(new WebChromeClient());
   web.addJavascriptInterface(new Object() {
@@ -45,7 +52,8 @@ public class MainActivity extends Activity {
   web.loadUrl("file:///android_asset/index.html");
  }
  private void speakNative(String text,String code){
-  if(tts==null||!voiceReady){message("Audio poko pare. Verifye Text-to-Speech sou telefòn nan.");return;}
+  if(text==null||text.trim().isEmpty())return;
+  if(tts==null||!voiceReady){pendingSpeech=text;pendingLanguage=code;return;}
   Locale locale;
   switch(code==null?"":code){case "es":locale=new Locale("es","ES");break;case "pt":locale=new Locale("pt","BR");break;case "fr":locale=Locale.FRENCH;break;case "ht":locale=new Locale("fr","FR");break;default:locale=Locale.US;}
   int result=tts.setLanguage(locale);
@@ -63,46 +71,54 @@ public class MainActivity extends Activity {
    boolean started=false;
    @Override public void onPageFinished(WebView v,String url){
     if(started)return; started=true;
-    printer.postDelayed(()->writePdf(printer,share),500);
+    printer.postDelayed(()->{
+     printer.measure(View.MeasureSpec.makeMeasureSpec(1122,View.MeasureSpec.EXACTLY),
+                     View.MeasureSpec.makeMeasureSpec(794,View.MeasureSpec.EXACTLY));
+     printer.layout(0,0,1122,794);
+     printer.invalidate();
+     printer.postDelayed(()->writePdf(printer,share),350);
+    },650);
    }
   });
   // A print WebView needs a measured layout to avoid clipped or blank PDF pages.
   FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(1122,794);
   printer.setAlpha(0.01f);
   root.addView(printer,lp);
-  String printCss="<style media=\"print\">@page{size:A4 landscape;margin:0}html,body{margin:0!important;padding:0!important;overflow:hidden!important;width:297mm!important;height:210mm!important}.sheet{margin:0!important;transform:none!important;box-shadow:none!important;page-break-inside:avoid!important}</style>";
+  String printCss="<style>@page{size:A4 landscape;margin:0}html,body{margin:0!important;padding:0!important;overflow:hidden!important;width:297mm!important;height:210mm!important}.sheet{margin:0!important;transform:none!important;box-shadow:none!important;page-break-inside:avoid!important}</style>";
   String printHtml=html.contains("</head>")?html.replace("</head>",printCss+"</head>"):html;
   printer.loadDataWithBaseURL("https://on-langage.local/",printHtml,"text/html","UTF-8",null);
  }
- private void writePdf(WebView printer,boolean share){
+ private void writePdf(WebView printer, boolean share){
+  PdfDocument document=new PdfDocument();
   try{
-   File folder=new File(getCacheDir(),"certificates"); if(!folder.exists())folder.mkdirs();
+   File folder=new File(getCacheDir(),"certificates");
+   if(!folder.exists() && !folder.mkdirs())throw new IOException("Pa ka kreye dosye PDF");
    File pdf=new File(folder,"ON-LANGAGE-Certificat-"+System.currentTimeMillis()+".pdf");
-   PrintDocumentAdapter adapter=printer.createPrintDocumentAdapter("ON-LANGAGE-Certificat");
-   PrintAttributes attrs=new PrintAttributes.Builder().setMediaSize(PrintAttributes.MediaSize.ISO_A4.asLandscape())
-    .setResolution(new PrintAttributes.Resolution("pdf","PDF",300,300))
-    .setMinMargins(PrintAttributes.Margins.NO_MARGINS).build();
-   adapter.onStart();
-   adapter.onLayout(null,attrs,new CancellationSignal(),new PrintDocumentAdapter.LayoutResultCallback(){
-    @Override public void onLayoutFinished(PrintDocumentInfo info,boolean changed){
-     try{
-      ParcelFileDescriptor fd=ParcelFileDescriptor.open(pdf,ParcelFileDescriptor.MODE_CREATE|ParcelFileDescriptor.MODE_TRUNCATE|ParcelFileDescriptor.MODE_READ_WRITE);
-      adapter.onWrite(new android.print.PageRange[]{android.print.PageRange.ALL_PAGES},fd,new CancellationSignal(),new PrintDocumentAdapter.WriteResultCallback(){
-       @Override public void onWriteFinished(android.print.PageRange[] pages){
-        try{fd.close();}catch(Exception ignored){}
-        adapter.onFinish(); root.removeView(printer);printer.destroy();
-        if(pdf.length()==0){message("PDF vid. Eseye ankò.");return;}
-        pendingPdf=pdf;
-        if(share)sharePdf(pdf);else chooseSave();
-       }
-       @Override public void onWriteFailed(CharSequence error){try{fd.close();}catch(Exception ignored){} adapter.onFinish();root.removeView(printer);printer.destroy();message("Erè PDF: "+error);}
-       @Override public void onWriteCancelled(){try{fd.close();}catch(Exception ignored){}adapter.onFinish();root.removeView(printer);printer.destroy();message("PDF anile");}
-      });
-     }catch(Exception e){message("Erè PDF: "+e.getMessage());}
-    }
-    @Override public void onLayoutFailed(CharSequence error){adapter.onFinish();root.removeView(printer);printer.destroy();message("Erè PDF: "+error);}
-   },null);
-  }catch(Exception e){root.removeView(printer);printer.destroy();message("Erè PDF: "+e.getMessage());}
+   // A4 landscape, measured in PDF points (72 points per inch).
+   final int pageWidth=842, pageHeight=595;
+   PdfDocument.PageInfo pageInfo=new PdfDocument.PageInfo.Builder(pageWidth,pageHeight,1).create();
+   PdfDocument.Page page=document.startPage(pageInfo);
+   Canvas canvas=page.getCanvas();
+   canvas.drawColor(android.graphics.Color.WHITE);
+   int viewWidth=printer.getWidth(), viewHeight=printer.getHeight();
+   if(viewWidth<=0 || viewHeight<=0)throw new IOException("Paj sètifika a poko pare");
+   float scale=Math.min((float)pageWidth/viewWidth,(float)pageHeight/viewHeight);
+   canvas.save();
+   canvas.translate((pageWidth-viewWidth*scale)/2f,(pageHeight-viewHeight*scale)/2f);
+   canvas.scale(scale,scale);
+   printer.draw(canvas);
+   canvas.restore();
+   document.finishPage(page);
+   try(FileOutputStream out=new FileOutputStream(pdf)){document.writeTo(out);}
+   if(pdf.length()==0)throw new IOException("PDF vid");
+   pendingPdf=pdf;
+   if(share)sharePdf(pdf);else chooseSave();
+  }catch(Exception e){message("Erè PDF: "+e.getMessage());}
+  finally{
+   document.close();
+   root.removeView(printer);
+   printer.destroy();
+  }
  }
  private void chooseSave(){
   Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);
