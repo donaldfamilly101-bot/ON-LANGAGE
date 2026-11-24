@@ -804,8 +804,10 @@ function olCertificateHTML(n){
 function olPreviewCert(n){
  if(n<3&&!passedLevel(n))return;if(n===3&&!passedLevel(2))return;
  const doc=olCertificateHTML(n),container=document.getElementById('olCertPreview');if(!container)return;
- container.innerHTML='<iframe title="Certificate preview" class="cert-preview-frame" id="olCertFrame"></iframe>';
- const frame=document.getElementById('olCertFrame');frame.srcdoc=doc;
+ const width=Math.max(240,container.clientWidth||window.innerWidth-36);
+ const scale=Math.min(1,width/1123);
+ container.innerHTML='<div style="position:relative;width:100%;height:'+Math.ceil(794*scale)+'px;overflow:hidden"><iframe title="Certificate preview" id="olCertFrame" style="position:absolute;top:0;left:50%;width:1123px;height:794px;border:0;background:white;transform-origin:top center;transform:translateX(-50%) scale('+scale+');"></iframe></div>';
+ const frame=document.getElementById('olCertFrame');frame.srcdoc=doc.replace('</style>','@media screen{html,body{width:1123px!important;height:794px!important;overflow:hidden!important;background:white!important}.sheet{margin:0!important}.screenbuttons{display:none!important}}</style>');
  container.scrollIntoView({behavior:'smooth',block:'start'});
 }
 downloadCert=function(n){
