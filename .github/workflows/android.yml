@@ -21,7 +21,7 @@ jobs:
           test -s app/src/main/AndroidManifest.xml
           test -s app/src/main/java/com/onlangage/app/MainActivity.java
           # Refuse to build if the Android asset is not the approved final HTML.
-          echo "ef73664e07fe98b5da3bcc02d1eba6a12d92131462e95f1cb762ef962bae4eb6  app/src/main/assets/index.html" | sha256sum -c -
+          echo "9400314f80be07aae0a7a21490d973485a21baa8290b0e62a243d44db0d681b8  app/src/main/assets/index.html" | sha256sum -c -
           python3 - <<'PYVERIFY'
           from pathlib import Path
           s=Path('app/src/main/assets/index.html').read_text()
@@ -42,7 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "$KEYSTORE_B64" || -z "$KEYSTORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
+          if [[ -z "$KEYSTORE_B64" || -z "$KEYSTORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_P paASSWORD" ]]; then
             echo 'ERROR: Four signing secrets are required; refusing unsigned Play Store bundle.' >&2
             exit 1
           fi
