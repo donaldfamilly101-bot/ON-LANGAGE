@@ -1,1 +1,39 @@
-plugins { id 'com.android.application' version '8.6.1' apply false }
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.onlangage.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.onlangage.app'
+        minSdk 24
+        targetSdk 36
+        versionCode 40
+        versionName '40.0'
+    }
+
+    signingConfigs {
+        release {
+            if (project.hasProperty('ON_KEYSTORE_FILE')) {
+                storeFile file(project.property('ON_KEYSTORE_FILE'))
+                storePassword project.property('ON_KEYSTORE_PASSWORD')
+                keyAlias project.property('ON_KEY_ALIAS')
+                keyPassword project.property('ON_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
