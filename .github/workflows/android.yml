@@ -30,7 +30,7 @@ jobs:
           print('ON-LANGAGE FINAL HTML VERIFIED')
           PYVERIFY
       - name: Install Android SDK 36
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
       - name: Install Android platform
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Require release signing credentials
