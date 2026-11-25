@@ -5,7 +5,7 @@ on:
     branches: [main]
 jobs:
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -14,26 +14,22 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '8.13'
       - name: Check application files
         run: |
           test -s app/src/main/assets/index.html
           test -s app/src/main/AndroidManifest.xml
           test -s app/src/main/java/com/onlangage/app/MainActivity.java
-          # Refuse to build if the Android asset is not the approved final HTML.
           echo "9400314f80be07aae0a7a21490d973485a21baa8290b0e62a243d44db0d681b8  app/src/main/assets/index.html" | sha256sum -c -
-          python3 - <<'PYVERIFY'
-          from pathlib import Path
-          s=Path('app/src/main/assets/index.html').read_text()
-          assert '8/10' in s and '13/15' in s and '17/20' in s
-          assert '5 lessons' not in s and '16/20' not in s
-          print('ON-LANGAGE FINAL HTML VERIFIED')
-          PYVERIFY
       - name: Install Android SDK 36
-        uses: android-actions/setup-android@v4
-      - name: Install Android platform
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Require release signing credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="${ANDROID_HOME:?ANDROID_HOME missing}/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDK"
+          yes | "$SDK" --licenses >/dev/null || true
+          "$SDK" --install 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Build and verify signed release
         env:
           KEYSTORE_B64: ${{ secrets.ON_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ON_KEYSTORE_PASSWORD }}
@@ -42,18 +38,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "$KEYSTORE_B64" || -z "$KEYSTORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
-            echo 'ERROR: Four signing secrets are required; refusing unsigned Play Store bundle.' >&2
-            exit 1
-          fi
-          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/on-langage-release.jks"
-          chmod 600 "$RUNNER_TEMP/on-langage-release.jks"
-          gradle :app:assembleDebug :app:bundleRelease --stacktrace \
-            -PON_KEYSTORE_FILE="$RUNNER_TEMP/on-langage-release.jks" \
-            -PON_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" \
-            -PON_KEY_ALIAS="$KEY_ALIAS" \
-            -PON_KEY_PASSWORD="$KEY_PASSWORD"
+          : "${KEYSTORE_B64:?Missing ON_KEYSTORE_BASE64}" "${KEYSTORE_PASSWORD:?Missing ON_KEYSTORE_PASSWORD}" "${KEY_ALIAS:?Missing ON_KEY_ALIAS}" "${KEY_PASSWORD:?Missing ON_KEY_PASSWORD}"
+          KEY="$RUNNER_TEMP/on-langage-release.jks"
+          trap 'rm -f "$KEY"' EXIT
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$KEY"
+          chmod 600 "$KEY"
+          gradle :app:assembleDebug :app:bundleRelease --stacktrace -PON_KEYSTORE_FILE="$KEY" -PON_KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" -PON_KEY_ALIAS="$KEY_ALIAS" -PON_KEY_PASSWORD="$KEY_PASSWORD"
           test -s app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify app/build/outputs/bundle/release/app-release.aab | tee "$RUNNER_TEMP/signature.txt"
+          grep -F 'jar verified' "$RUNNER_TEMP/signature.txt"
       - name: Save Android outputs
         uses: actions/upload-artifact@v4
         with:
